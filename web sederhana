@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Avalanche Wallet Connect</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>❄️ Avalanche dApp</h1>
+      <p class="subtitle">Connect Wallet (Core Wallet)</p>
+
+      <button id="connectBtn">Connect Wallet</button>
+
+      <div class="card">
+        <p><strong>Status:</strong> <span id="status">Not Connected</span></p>
+        <p><strong>Wallet Address:</strong></p>
+        <p id="address">-</p>
+        <p><strong>Network:</strong> <span id="network">-</span></p>
+        <p><strong>Balance:</strong> <span id="balance">-</span> AVAX</p>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
+* {
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  color: #ffffff;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  text-align: center;
+}
+
+h1 {
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  margin-top: 0;
+  opacity: 0.8;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin: 16px 0;
+  border: none;
+  border-radius: 8px;
+  background-color: #e84142;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+button:hover {
+  background-color: #d73737;
+}
+
+.card {
+  background: rgba(0, 0, 0, 0.25);
+  padding: 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: left;
+}
+
+#address {
+  font-family: monospace;
+  font-size: 13px;
+  word-break: break-all;
+}
+const connectBtn = document.getElementById("connectBtn");
+const statusEl = document.getElementById("status");
+const addressEl = document.getElementById("address");
+const networkEl = document.getElementById("network");
+const balanceEl = document.getElementById("balance");
+
+// Avalanche Fuji Testnet chainId (hex)
+const AVALANCHE_FUJI_CHAIN_ID = "0xa869";
+
+function formatAvaxBalance(balanceWei) {
+  const balance = parseInt(balanceWei, 16);
+  console.log({ balance });
+  return (balance / 1e18).toFixed(4);
+}
+
+async function connectWallet() {
+  if (typeof window.ethereum === "undefined") {
+    alert("Core Wallet tidak terdeteksi. Silakan install Core Wallet.");
+    return;
+  }
+
+  console.log("window.ethereum", window.ethereum);
+
+  try {
+    statusEl.textContent = "Connecting...";
+
+    // Request wallet accounts
+    const accounts = await window.ethereum.request({
+      method: "eth_requestAccounts",
+    });
+
+    const address = accounts[0];
+    addressEl.textContent = address;
+
+    console.log({ address });
+
+    // Get chainId
+    const chainId = await window.ethereum.request({
+      method: "eth_chainId",
+    });
+
+    console.log({ chainId });
+
+    if (chainId === AVALANCHE_FUJI_CHAIN_ID) {
+      networkEl.textContent = "Avalanche Fuji Testnet";
+      statusEl.textContent = "Connected ✅";
+      statusEl.style.color = "#4cd137";
+
+      // Get AVAX balance
+      const balanceWei = await window.ethereum.request({
+        method: "eth_getBalance",
+        params: [address, "latest"],
+      });
+
+      console.log({ balanceWei });
+
+      balanceEl.textContent = formatAvaxBalance(balanceWei);
+    } else {
+      networkEl.textContent = "Wrong Network ❌";
+      statusEl.textContent = "Please switch to Avalanche Fuji";
+      statusEl.style.color = "#fbc531";
+      balanceEl.textContent = "-";
+    }
+  } catch (error) {
+    console.error(error);
+    statusEl.textContent = "Connection Failed ❌";
+  }
+}
+
+connectBtn.addEventListener("click", connectWallet);
+
